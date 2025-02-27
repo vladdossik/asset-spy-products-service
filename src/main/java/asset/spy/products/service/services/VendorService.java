@@ -7,6 +7,7 @@ import asset.spy.products.service.entity.VendorEntity;
 import asset.spy.products.service.exception.EntityAlreadyExistsException;
 import asset.spy.products.service.mapper.VendorMapper;
 import asset.spy.products.service.repositories.VendorRepository;
+import asset.spy.products.service.specification.VendorSpecification;
 import asset.spy.products.service.util.hashing.IDHasher;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
@@ -15,6 +16,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,12 +28,16 @@ public class VendorService {
     private final VendorMapper vendorMapper;
 
     @Transactional(readOnly = true)
-    public Page<ResponseVendorDto> getVendors(int page, int size, String sortCriteria) {
+    public Page<ResponseVendorDto> getVendors(int page, int size, String sortCriteria,
+                                              String name, String country) {
 
         log.info("Get vendors from page {} of size {}", page, size);
 
+        Specification<VendorEntity> specification = Specification
+                .where(VendorSpecification.hasName(name)
+                        .and(VendorSpecification.hasCountry(country)));
         return vendorRepository
-                .findAll(PageRequest.of(page, size, Sort.by(sortCriteria)))
+                .findAll(specification, PageRequest.of(page, size, Sort.by(sortCriteria)))
                 .map(vendorMapper::toResponseVendorDto);
     }
 

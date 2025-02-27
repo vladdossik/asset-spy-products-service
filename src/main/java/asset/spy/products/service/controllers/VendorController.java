@@ -31,8 +31,10 @@ public class VendorController {
     @GetMapping()
     public Page<ResponseVendorDto> getVendors(@RequestParam(defaultValue = "0") int page,
                                               @RequestParam(defaultValue = "10") int size,
-                                              @RequestParam(required = false, defaultValue = "id") String sortCriteria) {
-        return vendorService.getVendors(page, size, sortCriteria);
+                                              @RequestParam(required = false, defaultValue = "id") String sortCriteria,
+                                              @RequestParam(required = false) String name,
+                                              @RequestParam(required = false) String country) {
+        return vendorService.getVendors(page, size, sortCriteria, name, country);
     }
 
     @GetMapping("/{id}")

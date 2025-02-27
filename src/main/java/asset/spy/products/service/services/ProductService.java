@@ -7,6 +7,7 @@ import asset.spy.products.service.entity.ProductEntity;
 import asset.spy.products.service.entity.VendorEntity;
 import asset.spy.products.service.mapper.ProductMapper;
 import asset.spy.products.service.repositories.ProductRepository;
+import asset.spy.products.service.specification.ProductSpecification;
 import asset.spy.products.service.util.hashing.IDHasher;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
@@ -14,9 +15,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,12 +32,20 @@ public class ProductService {
     private final ProductMapper productMapper;
 
     @Transactional(readOnly = true)
-    public Page<ResponseProductDto> getProducts(int page, int size, String sortCriteria) {
+    public Page<ResponseProductDto> getProducts(int page, int size, String sortCriteria,
+                                                String name, String type, String manufacturer,
+                                                BigDecimal maxPrice, BigDecimal minPrice) {
 
         log.info("Get products from page {} of size {}", page, size);
 
+        Specification<ProductEntity> specification = Specification
+                .where(ProductSpecification.hasName(name)
+                        .and(ProductSpecification.hasType(type))
+                        .and(ProductSpecification.hasManufacturer(manufacturer))
+                        .and(ProductSpecification.maxPrice(maxPrice))
+                        .or(ProductSpecification.minPrice(minPrice)));
         return productRepository
-                .findAll(PageRequest.of(page, size, Sort.by(sortCriteria)))
+                .findAll(specification, PageRequest.of(page, size, Sort.by(sortCriteria)))
                 .map(productMapper::toResponseProductDto);
     }
 

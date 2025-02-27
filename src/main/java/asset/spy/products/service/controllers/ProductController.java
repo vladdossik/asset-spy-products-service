@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+
 @RestController
 @RequestMapping("/v1/api/products")
 @AllArgsConstructor
@@ -26,8 +28,13 @@ public class ProductController {
     @GetMapping()
     public Page<ResponseProductDto> getProducts(@RequestParam(defaultValue = "0") int page,
                                                 @RequestParam(defaultValue = "10") int size,
-                                                @RequestParam(required = false, defaultValue = "id") String sortCriteria) {
-        return productService.getProducts(page, size, sortCriteria);
+                                                @RequestParam(required = false, defaultValue = "id") String sortCriteria,
+                                                @RequestParam(required = false) String name,
+                                                @RequestParam(required = false) String type,
+                                                @RequestParam(required = false) String manufacturer,
+                                                @RequestParam(required = false)BigDecimal minPrice,
+                                                @RequestParam(required = false) BigDecimal maxPrice) {
+        return productService.getProducts(page, size, sortCriteria, name, type, manufacturer, maxPrice, minPrice);
     }
 
     @GetMapping("/{id}")
