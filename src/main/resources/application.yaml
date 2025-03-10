@@ -2,7 +2,7 @@ spring:
   application:
     name: asset-spy-products-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/asset_spy_db
     username: postgres
     password: 123
     driver-class-name: org.postgresql.Driver
