@@ -4,12 +4,16 @@ import asset.spy.products.service.dto.http.vendor.ResponseVendorDto;
 import asset.spy.products.service.dto.http.vendor.CreateVendorDto;
 import asset.spy.products.service.dto.http.vendor.UpdateVendorDto;
 import asset.spy.products.service.entity.VendorEntity;
+import asset.spy.products.service.event.CreatedNewVendorEvent;
+import asset.spy.products.service.event.DeletedVendorEvent;
+import asset.spy.products.service.event.UpdatedVendorEvent;
 import asset.spy.products.service.exception.EntityAlreadyExistsException;
 import asset.spy.products.service.mapper.VendorMapper;
 import asset.spy.products.service.repository.VendorRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
@@ -32,6 +36,7 @@ public class VendorService {
     private final VendorRepository vendorRepository;
     private final VendorMapper vendorMapper;
     private final SpecificationCreateService specificationCreateService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional(readOnly = true)
     public Page<ResponseVendorDto> getVendors(int page, int size, String sortCriteria,
@@ -65,7 +70,12 @@ public class VendorService {
             VendorEntity vendorToSave = vendorMapper.toVendorEntity(vendor);
             log.info("Vendor to save : {}", vendorToSave);
 
-            return vendorMapper.toResponseVendorDto(vendorRepository.save(vendorToSave));
+            VendorEntity savedVendor = vendorRepository.save(vendorToSave);
+
+            applicationEventPublisher.publishEvent(new CreatedNewVendorEvent());
+            log.info("Published new CreatedNewVendorEvent");
+
+            return vendorMapper.toResponseVendorDto(savedVendor);
         } catch (DataIntegrityViolationException e) {
             log.error("Error saving vendor", e);
             throw new EntityAlreadyExistsException("This vendor already exists", e.getCause());
@@ -82,6 +92,10 @@ public class VendorService {
         vendorMapper.updateVendor(vendorDto, vendor);
 
         log.info("Updated vendor : {}", vendor);
+
+        applicationEventPublisher.publishEvent(new UpdatedVendorEvent());
+        log.info("Published new UpdatedVendorEvent");
+
         return vendorMapper.toResponseVendorDto(vendor);
     }
 
@@ -94,6 +108,9 @@ public class VendorService {
 
         vendorRepository.delete(vendor);
         log.info("Vendor with id {} was deleted", id);
+
+        applicationEventPublisher.publishEvent(new DeletedVendorEvent());
+        log.info("Published new DeletedVendorEvent");
 
         return vendorMapper.toResponseVendorDto(vendor);
     }

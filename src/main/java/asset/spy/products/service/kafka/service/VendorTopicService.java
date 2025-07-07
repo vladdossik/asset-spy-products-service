@@ -36,27 +36,35 @@ public class VendorTopicService {
                 .map(vendorName -> vendorName.replace(" ", "_"))
                 .toList();
 
-        createNonExistsTopics(topicNames);
+        createTopics(topicNames);
         return topicNames;
     }
 
-    private void createNonExistsTopics(List<String> topics){
+    private void createTopics(List<String> newTopics){
         Map<String, Object> configs = kafkaAdmin.getConfigurationProperties();
 
         try (AdminClient adminClient = AdminClient.create(configs)) {
             Set<String> existsTopics = adminClient.listTopics().names().get();
-            Collection<NewTopic> newTopics = new ArrayList<>();
-            for (String topic : topics) {
+
+            Collection<String> unusedTopicsToDelete = new ArrayList<>();
+            for (String existsTopic : existsTopics) {
+                if (!newTopics.contains(existsTopic)) {
+                    unusedTopicsToDelete.add(existsTopic);
+                }
+            }
+            adminClient.deleteTopics(unusedTopicsToDelete);
+
+            Collection<NewTopic> topicsToCreate = new ArrayList<>();
+            for (String topic : newTopics) {
                 if (!existsTopics.contains(topic)) {
                     NewTopic newTopic = TopicBuilder
                             .name(topic)
                             .partitions(kafkaProperties.getCountPartitions())
                             .build();
-                    newTopics.add(newTopic);
+                    topicsToCreate.add(newTopic);
                 }
             }
-
-            adminClient.createTopics(newTopics).all().get();
+            adminClient.createTopics(topicsToCreate).all().get();
         } catch (InterruptedException | ExecutionException e) {
             log.error(e.getMessage(), e);
         }
